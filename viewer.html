@@ -108,7 +108,7 @@ async function poll(){
    try{
     const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{
      cache:'no-store',
-     headers:{'Accept':'application/vnd.github+json','Cache-Control':'no-cache'}
+     headers:{'Accept':'application/vnd.github+json'}
     });
     if(c.ok){
      const j=await c.json();
