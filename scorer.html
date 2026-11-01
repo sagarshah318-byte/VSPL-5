@@ -67,7 +67,8 @@ try{tab=sessionStorage.getItem('sb_t')||'live'}catch(e){}
 function save(){try{localStorage.setItem('sb_all',JSON.stringify({H,M,T,ts:Date.now()}))}catch(e){}if(CAN){clearTimeout(pt);pt=setTimeout(push,1500)}}
 function repo(){
  let r='';const m=location.hostname.match(/^([^.]+)\.github\.io$/i),p=location.pathname.split('/').filter(Boolean);
- if(m&&p.length>1)r=m[1]+'/'+p[0];else try{r=localStorage.getItem('sb_repo')||''}catch(e){}
+ // GitHub Pages project sites use /REPO/; accept one path segment.
+ if(m&&p.length>=1)r=m[1]+'/'+p[0];else try{r=localStorage.getItem('sb_repo')||''}catch(e){}
  if(!r){r=(prompt('GitHub repository, like username/repo:')||'').trim();try{localStorage.setItem('sb_repo',r)}catch(e){}}
  return r}
 let SY='',TOK='',SHA=null,busy=false,dirty=false;
