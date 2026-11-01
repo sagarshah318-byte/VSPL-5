@@ -93,40 +93,38 @@ async function push(){
 function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
 async function poll(){
+ let n=null,source='';
+ const errors=[];
+ // Read the authoritative GitHub Contents API first, rather than trusting a cached Pages copy.
  try{
-  // state.json is on the same GitHub Pages origin as this viewer, so no cross-origin request is needed.
-  const g=await fetch('state.json?t='+Date.now(),{cache:'no-store'});
-  if(!g.ok)throw new Error('Pages state '+g.status);
-  let n=await g.json();
-  // Pages may serve a stale deployment. Check the live raw file as well.
-  if(Date.now()-(n.ts||0)>5000){
-   try{
-    const raw=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
-    if(raw.ok){const fresh=await raw.json();if((fresh.ts||0)>(n.ts||0))n=fresh;}
-   }catch(_){}
-  }
-  // Final fallback: GitHub Contents API.
-  if(Date.now()-(n.ts||0)>15000 && Date.now()-lastApiCheck>10000){
-   lastApiCheck=Date.now();
-   try{
-    const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{cache:'no-store'});
-    if(c.ok){
-     const j=await c.json();
-     const b64=(j.content||'').replace(/\\s/g,'');
-     const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
-     const fresh=JSON.parse(new TextDecoder().decode(bytes));
-     if((fresh.ts||0)>(n.ts||0))n=fresh;
-    }
-   }catch(_){}
-  }
-  dg('● live · data '+(n.ts?new Date(n.ts).toLocaleTimeString():'received'));
-  if((n.ts||0)>(S.ts||0)){
-   const o=M&&M.last?M.last.n:null;
-   S=n;H=n.H||[];M=n.M||null;T=n.T||[];
-   r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true);
-  }
-  pf=true;
- }catch(e){dg('waiting… '+(e.message||e))}
+  const u='https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&ts='+Date.now();
+  const g=await fetch(u,{cache:'no-store'});
+  if(!g.ok)throw new Error('GitHub API '+g.status);
+  const j=await g.json();
+  const b64=(j.content||'').replace(/\s/g,'');
+  const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
+  n=JSON.parse(new TextDecoder().decode(bytes));
+  if(!n||!n.M)throw new Error('Invalid score data');
+  source='GitHub';
+ }catch(e){errors.push(e.message||'GitHub fetch failed')}
+ // Fallback to the Pages JSON only if the API request fails.
+ if(!n){
+  try{
+   const g=await fetch('state.json?ts='+Date.now(),{cache:'no-store'});
+   if(!g.ok)throw new Error('Pages '+g.status);
+   const x=await g.json();
+   if(!x||!x.M)throw new Error('Invalid Pages score data');
+   n=x;source='Pages backup';
+  }catch(e){errors.push(e.message||'Pages fetch failed')}
+ }
+ if(!n)throw new Error(errors.join(' · ')||'No score data received');
+ dg('● live · '+source+' · data '+new Date(n.ts).toLocaleTimeString()+(errors.length?' · '+errors.join(' / '):''));
+ if(Number(n.ts)>Number(S.ts||0)){
+  const o=M&&M.last?M.last.n:null;
+  S=n;H=n.H||[];M=n.M||null;T=n.T||[];
+  r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true);
+ }
+ pf=true;
 }
 function shareTxt(m){
  const o=b=>Math.floor(b/6)+'.'+b%6;
