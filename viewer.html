@@ -98,14 +98,21 @@ async function poll(){
   const g=await fetch('state.json?t='+Date.now(),{cache:'no-store'});
   if(!g.ok)throw new Error('Pages state '+g.status);
   let n=await g.json();
-  // If Pages CDN is behind, check GitHub's API at most every 10 seconds.
+  // Pages may serve a stale deployment. Check the live raw file as well.
+  if(Date.now()-(n.ts||0)>5000){
+   try{
+    const raw=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
+    if(raw.ok){const fresh=await raw.json();if((fresh.ts||0)>(n.ts||0))n=fresh;}
+   }catch(_){}
+  }
+  // Final fallback: GitHub Contents API.
   if(Date.now()-(n.ts||0)>15000 && Date.now()-lastApiCheck>10000){
    lastApiCheck=Date.now();
    try{
     const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{cache:'no-store'});
     if(c.ok){
      const j=await c.json();
-     const b64=(j.content||'').replace(/\s/g,'');
+     const b64=(j.content||'').replace(/\\s/g,'');
      const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
      const fresh=JSON.parse(new TextDecoder().decode(bytes));
      if((fresh.ts||0)>(n.ts||0))n=fresh;
