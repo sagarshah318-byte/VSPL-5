@@ -95,9 +95,10 @@ function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<
 async function poll(){
  try{
   const raw='https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json';
+  // Keep this request CORS-simple: custom cache headers trigger a browser preflight
+  // that raw.githubusercontent.com may reject on mobile browsers.
   const g=await fetch(raw+'?t='+Date.now()+'&v='+Math.random().toString(36).slice(2),{
-   cache:'no-store',
-   headers:{'Cache-Control':'no-cache, no-store, max-age=0','Pragma':'no-cache'}
+   cache:'no-store'
   });
   if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
   let n=await g.json();
