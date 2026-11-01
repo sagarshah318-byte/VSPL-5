@@ -59,7 +59,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 const VIEWER=true,BR='main';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ov=b=>Math.floor(b/6)+'.'+b%6;
-let H=[],M=null,T=[],U=[],tab='live',view=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
+let H=[],M=null,T=[],U=[],tab='live',view=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false,lastApiCheck=0;
 try{S=JSON.parse(document.getElementById('state').textContent||'{}')}catch(e){}
 T=S.T||[];S={};
 if(!VIEWER)try{const L=JSON.parse(localStorage.getItem('sb_all')||'null');if(L){H=L.H||[];M=L.M||null;T=L.T||[]}}catch(e){}
@@ -102,7 +102,8 @@ async function poll(){
   if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
   let n=await g.json();
   // If the raw CDN is behind the saved score, use the GitHub Contents API as a fallback.
-  if((Date.now()-(n.ts||0)>20000) && (!S.ts || (n.ts||0)<=S.ts || Date.now()-(n.ts||0)>20000)){
+  if(Date.now()-(n.ts||0)>20000 && Date.now()-lastApiCheck>60000){
+   lastApiCheck=Date.now();
    try{
     const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{
      cache:'no-store',
