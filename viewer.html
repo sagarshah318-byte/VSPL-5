@@ -94,26 +94,20 @@ function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent=
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
 async function poll(){
  try{
-  const raw='https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json';
-  // Keep this request CORS-simple: custom cache headers trigger a browser preflight
-  // that raw.githubusercontent.com may reject on mobile browsers.
-  const g=await fetch(raw+'?t='+Date.now()+'&v='+Math.random().toString(36).slice(2),{
-   cache:'no-store'
-  });
-  if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
+  // state.json is on the same GitHub Pages origin as this viewer, so no cross-origin request is needed.
+  const g=await fetch('state.json?t='+Date.now(),{cache:'no-store'});
+  if(!g.ok)throw new Error('Pages state '+g.status);
   let n=await g.json();
-  // If the raw CDN is behind the saved score, use the GitHub Contents API as a fallback.
-  if(Date.now()-(n.ts||0)>20000 && Date.now()-lastApiCheck>60000){
+  // If Pages CDN is behind, check GitHub's API at most every 10 seconds.
+  if(Date.now()-(n.ts||0)>15000 && Date.now()-lastApiCheck>10000){
    lastApiCheck=Date.now();
    try{
-    const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{
-     cache:'no-store',
-     headers:{'Accept':'application/vnd.github+json'}
-    });
+    const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{cache:'no-store'});
     if(c.ok){
      const j=await c.json();
-     const decoded=decodeURIComponent(escape(atob((j.content||'').replace(/\\s/g,''))));
-     const fresh=JSON.parse(decoded);
+     const b64=(j.content||'').replace(/\s/g,'');
+     const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
+     const fresh=JSON.parse(new TextDecoder().decode(bytes));
      if((fresh.ts||0)>(n.ts||0))n=fresh;
     }
    }catch(_){}
