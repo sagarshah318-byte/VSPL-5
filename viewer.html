@@ -67,7 +67,8 @@ try{tab=sessionStorage.getItem('sb_t')||'live'}catch(e){}
 function save(){try{localStorage.setItem('sb_all',JSON.stringify({H,M,T,ts:Date.now()}))}catch(e){}if(CAN){clearTimeout(pt);pt=setTimeout(push,1500)}}
 function repo(){
  let r='';const m=location.hostname.match(/^([^.]+)\.github\.io$/i),p=location.pathname.split('/').filter(Boolean);
- if(m&&p.length>1)r=m[1]+'/'+p[0];else try{r=localStorage.getItem('sb_repo')||''}catch(e){}
+ // GitHub Pages project sites may open at /REPO/ with only one path segment.
+ if(m&&p.length>=1)r=m[1]+'/'+p[0];else try{r=localStorage.getItem('sb_repo')||''}catch(e){}
  if(!r){r=(prompt('GitHub repository, like username/repo:')||'').trim();try{localStorage.setItem('sb_repo',r)}catch(e){}}
  return r}
 let SY='',TOK='',SHA=null,busy=false,dirty=false;
@@ -94,7 +95,9 @@ function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<
 async function poll(){
  try{const g=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
   if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
-  const n=await g.json();dg('● live · updated '+new Date().toLocaleTimeString());
+  const n=await g.json();
+  // Show when the fetched score data was saved, not merely when this poll ran.
+  dg('● live · data '+(n.ts?new Date(n.ts).toLocaleTimeString():'received'));
   if((n.ts||0)!=(S.ts||0)){const o=M&&M.last?M.last.n:null;S=n;H=n.H||[];M=n.M||null;T=n.T||[];r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true)}
   pf=true
  }catch(e){dg('waiting… '+(e.message||e))}}
