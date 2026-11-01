@@ -93,14 +93,38 @@ async function push(){
 function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
 async function poll(){
- try{const g=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
+ try{
+  const raw='https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json';
+  const g=await fetch(raw+'?t='+Date.now()+'&v='+Math.random().toString(36).slice(2),{
+   cache:'no-store',
+   headers:{'Cache-Control':'no-cache, no-store, max-age=0','Pragma':'no-cache'}
+  });
   if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
-  const n=await g.json();
-  // Show when the fetched score data was saved, not merely when this poll ran.
+  let n=await g.json();
+  // If the raw CDN is behind the saved score, use the GitHub Contents API as a fallback.
+  if((Date.now()-(n.ts||0)>20000) && (!S.ts || (n.ts||0)<=S.ts || Date.now()-(n.ts||0)>20000)){
+   try{
+    const c=await fetch('https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&t='+Date.now(),{
+     cache:'no-store',
+     headers:{'Accept':'application/vnd.github+json','Cache-Control':'no-cache'}
+    });
+    if(c.ok){
+     const j=await c.json();
+     const decoded=decodeURIComponent(escape(atob((j.content||'').replace(/\\s/g,''))));
+     const fresh=JSON.parse(decoded);
+     if((fresh.ts||0)>(n.ts||0))n=fresh;
+    }
+   }catch(_){}
+  }
   dg('● live · data '+(n.ts?new Date(n.ts).toLocaleTimeString():'received'));
-  if((n.ts||0)!=(S.ts||0)){const o=M&&M.last?M.last.n:null;S=n;H=n.H||[];M=n.M||null;T=n.T||[];r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true)}
-  pf=true
- }catch(e){dg('waiting… '+(e.message||e))}}
+  if((n.ts||0)>(S.ts||0)){
+   const o=M&&M.last?M.last.n:null;
+   S=n;H=n.H||[];M=n.M||null;T=n.T||[];
+   r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true);
+  }
+  pf=true;
+ }catch(e){dg('waiting… '+(e.message||e))}
+}
 function shareTxt(m){
  const o=b=>Math.floor(b/6)+'.'+b%6;
  let t='🏏 '+m.teams[0].name+' vs '+m.teams[1].name+' ('+m.overs+' ov, '+m.date+')\n';
