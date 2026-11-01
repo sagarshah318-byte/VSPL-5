@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Cricket Scorebook – Scorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f3f6f1;--sf:#fff;--tx:#14231a;--mu:#5d6d62;--ac:#1f6b3a;--ac2:#c8372d;--ln:#d8e0d6;--ch:#e7efe5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a13;--sf:#17261c;--tx:#e8f1ea;--mu:#9bb0a0;--ac:#58c27d;--ac2:#ff7a6e;--ln:#28402f;--ch:#1f3326;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a13;--sf:#17261c;--tx:#e8f1ea;--mu:#9bb0a0;--ac:#58c27d;--ac2:#ff7a6e;--ln:#28402f;--ch:#1f3326;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Georgia,"Times New Roman",serif}
+h1,h2,h3,button,select,input,textarea,th,.num{font-family:"Trebuchet MS",Verdana,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:12px}
+header{display:flex;justify-content:space-between;align-items:center;padding:6px 0 10px}
+h1{font-size:21px;margin:0;color:var(--ac)}
+nav{display:flex;gap:6px;margin-bottom:12px}
+nav button{flex:1;padding:10px 4px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);border-radius:8px;font-size:14px}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.c{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}
+.sb{border-left:6px solid var(--ac)}
+.big{font-size:34px;font-weight:700;line-height:1.1}
+.mu{color:var(--mu);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;color:var(--mu);text-align:right;font-weight:600;padding:4px}
+td{padding:6px 4px;text-align:right;border-top:1px solid var(--ln)}
+th:first-child,td:first-child{text-align:left}
+td small{display:block;color:var(--mu);font-size:12px}
+.tbl{overflow-x:auto}
+button{cursor:pointer}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.g button{padding:14px 0;font-size:18px;font-weight:700;border:1px solid var(--ln);background:var(--ch);color:var(--tx);border-radius:10px}
+.g .w4{background:var(--ac);color:#fff}.g .wk{background:var(--ac2);color:#fff}
+.b2{padding:10px 14px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);border-radius:8px;font-size:14px;margin:2px}
+.b2.p{background:var(--ac);color:#fff;border-color:var(--ac)}.b2.d{color:var(--ac2)}
+.ov{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ov span{min-width:30px;height:30px;border-radius:15px;background:var(--ch);display:inline-flex;align-items:center;justify-content:center;font:600 13px Verdana,sans-serif;padding:0 6px}
+.ov .x{background:var(--ac2);color:#fff}.ov .f{background:var(--ac);color:#fff}
+label{display:block;font:600 13px Verdana,sans-serif;margin:8px 0 3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.best{background:var(--ac);color:#fff;border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.best b{font-size:18px}
+.res{font-weight:700;color:var(--ac2)}
+.pick{border:2px dashed var(--ac);}
+.pop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);overflow:hidden}
+.pop .bx{background:var(--sf);color:var(--tx);border-radius:18px;padding:26px 34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4);animation:pp .4s;max-width:90%}
+.pop h2{font-size:46px;margin:0}.pop .p6{color:var(--ac)}.pop .pw{color:var(--ac2)}
+.cf{position:absolute;top:-30px;font-size:26px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(540deg)}}
+@keyframes pp{from{transform:scale(.4);opacity:0}}
+@media(prefers-reduced-motion:reduce){.cf{display:none}.pop .bx{animation:none}}
+@media print{body{background:#fff;color:#000}.noprint,.pop{display:none!important}.c{border:1px solid #999;break-inside:avoid}}
+</style></head><body><div class="w">
+<header class="noprint"><h1>🏏 Cricket Scorebook</h1><span id="st" class="mu"></span></header>
+<nav class="noprint" id="nav"></nav>
+<div id="app"></div></div>
+<script id="state" type="application/json">{"T": [{"name": "Prahil Panthers", "g": "Male", "p": ["Jigar Shah", "Shrenil Shiroya", "Harsh Shah", "Nilay Bhandari", "Kunal Shah", "Raj Shah", "Amol Shah", "Rajesh Shah"]}, {"name": "Neevansh Warrios", "g": "Male", "p": ["Atul Shah", "Nitya Shah", "Jignesh Shah", "Akshay Shah", "Keyur Shah", "Kalpesh Shah", "Krunal Shah", "Maahir Shah"]}]}</script>
+<script>
+const VIEWER=false,BR='main';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ov=b=>Math.floor(b/6)+'.'+b%6;
+let H=[],M=null,T=[],U=[],tab='live',view=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
+try{S=JSON.parse(document.getElementById('state').textContent||'{}')}catch(e){}
+T=S.T||[];S={};
+if(!VIEWER)try{const L=JSON.parse(localStorage.getItem('sb_all')||'null');if(L){H=L.H||[];M=L.M||null;T=L.T||[]}}catch(e){}
+try{tab=sessionStorage.getItem('sb_t')||'live'}catch(e){}
+function save(){try{localStorage.setItem('sb_all',JSON.stringify({H,M,T,ts:Date.now()}))}catch(e){}if(CAN){clearTimeout(pt);pt=setTimeout(push,1500)}}
+function repo(){
+ let r='';const m=location.hostname.match(/^([^.]+)\.github\.io$/i),p=location.pathname.split('/').filter(Boolean);
+ if(m&&p.length>1)r=m[1]+'/'+p[0];else try{r=localStorage.getItem('sb_repo')||''}catch(e){}
+ if(!r){r=(prompt('GitHub repository, like username/repo:')||'').trim();try{localStorage.setItem('sb_repo',r)}catch(e){}}
+ return r}
+let SY='',TOK='',SHA=null,busy=false,dirty=false;
+function tok(){try{TOK=TOK||localStorage.getItem('sb_tok')||''}catch(e){}
+ if(!TOK){TOK=(prompt('Paste your GitHub token (kept only on this phone):')||'').trim();try{localStorage.setItem('sb_tok',TOK)}catch(e){}}return TOK}
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+async function push(){
+ if(VIEWER)return;if(busy){dirty=true;return}
+ if(!tok()){SY='no token';st();return}
+ busy=true;SY='sending…';st();
+ const u='https://api.github.com/repos/'+repo()+'/contents/state.json',h={Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'};
+ try{const body=JSON.stringify({H,M,T,ts:Date.now()});
+  for(let k=0;k<3;k++){
+   if(!SHA){const g=await fetch(u+'?ref='+BR+'&t='+Date.now(),{headers:h,cache:'no-store'});
+    if(g.ok)SHA=(await g.json()).sha;else if(g.status!=404)throw new Error('GitHub '+g.status+(g.status==401?' (token wrong)':' (check repo and token)'))}
+   const p=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify(Object.assign({message:'score',content:b64(body),branch:BR},SHA?{sha:SHA}:{}))});
+   if(p.ok){SHA=(await p.json()).content.sha;SY='live · sent '+new Date().toLocaleTimeString();break}
+   if(p.status==409||p.status==422){SHA=null;continue}
+   throw new Error('GitHub '+p.status+(p.status==401?' (token wrong)':p.status==404?' (repo or token access)':''))}
+ }catch(e){SY='send failed: '+(e.message||e)}
+ busy=false;st();if(dirty){dirty=false;push()}}
+function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
+function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
+async function poll(){
+ try{const g=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
+  if(!g.ok)throw new Error(g.status==404?'no scores published yet':'GitHub '+g.status);
+  const n=await g.json();dg('● live · updated '+new Date().toLocaleTimeString());
+  if((n.ts||0)!=(S.ts||0)){const o=M&&M.last?M.last.n:null;S=n;H=n.H||[];M=n.M||null;T=n.T||[];r();const l=M&&M.last;if(pf&&l&&(o==null||l.n>o))pop(l,true)}
+  pf=true
+ }catch(e){dg('waiting… '+(e.message||e))}}
+function shareTxt(m){
+ const o=b=>Math.floor(b/6)+'.'+b%6;
+ let t='🏏 '+m.teams[0].name+' vs '+m.teams[1].name+' ('+m.overs+' ov, '+m.date+')\n';
+ m.innings.forEach((i,k)=>{const fin=m.done||k<m.cur;
+  t+=m.teams[i.bat].name+' '+i.runs+'/'+i.wkts+' ('+o(i.balls)+' ov)\n';
+  if(!fin){t+=[i.s,i.n].filter(n=>n&&i.B[n]).map(n=>n+(n==i.s?'*':'')+' '+i.B[n].r+' ('+i.B[n].b+')').join(', ')+'\n';if(i.b&&i.W[i.b])t+='Bowling: '+i.b+' '+o(i.W[i.b].b)+'-'+i.W[i.b].r+'-'+i.W[i.b].w+'\n'}
+  else{const top=Object.entries(i.B).sort((a,b)=>b[1].r-a[1].r)[0],bw=Object.entries(i.W).sort((a,b)=>b[1].w-a[1].w||a[1].r-b[1].r)[0];
+   if(top)t+='Top scorer: '+top[0]+' '+top[1].r+' ('+top[1].b+')\n';if(bw)t+='Best bowler: '+bw[0]+' '+bw[1].w+'/'+bw[1].r+'\n'}});
+ if(m.done)t+='\n'+m.result;else if(m.cur){const i=m.innings[1],tg=m.innings[0].runs+1;t+='Target '+tg+', need '+Math.max(0,tg-i.runs)+' off '+Math.max(0,m.overs*6-i.balls)+' balls'}
+ return t.trim()}
+async function shareScore(id){
+ const m=id?H.find(x=>x.id==id):M;if(!m)return;const t=shareTxt(m);
+ try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e&&e.name=='AbortError')return}
+ try{navigator.clipboard.writeText(t)}catch(e){}
+ const w=window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+ if(!w)prompt('Copy this and paste it in WhatsApp:',t)}
+let _x=0;
+function pop(l,f){
+ if(!l||!/^(4|6|W)$/.test(l.l))return;const rem=f?4000:4000-(Date.now()-(l.ts||0));if(rem<700)return;clearTimeout(popT);
+ let d=document.getElementById('pop');if(!d){d=document.createElement('div');d.id='pop';d.className='pop noprint';document.body.appendChild(d);d.onclick=()=>d.remove()}
+ const E=['🎉','🎊','✨','🎈','🏏'],cf=Array.from({length:44},()=>`<span class="cf" style="left:${Math.random()*100}%;animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*.7}s">${E[Math.floor(Math.random()*5)]}</span>`).join('');
+ d.innerHTML=cf+`<div class="bx"><h2 class="${l.l=='W'?'pw':'p6'}">${l.l=='4'?'FOUR! 🏏':l.l=='6'?'SIX! 🚀':'WICKET! ☝️'}</h2><p>${esc(l.t||'')}</p></div>`;
+ popT=setTimeout(()=>d.remove(),rem)}
+const mk=(bat,bowl)=>({bat,bowl,runs:0,wkts:0,balls:0,ex:0,B:{},W:{},over:[],lastB:null,s:null,n:null,b:null,fow:[]});
+const bt=(i,k)=>i.B[k]||(i.B[k]={r:0,b:0,f:0,s:0,out:''});
+const bw=(i,k)=>i.W[k]||(i.W[k]={b:0,r:0,w:0});
+const lines=v=>v.split(/[\n,]/).map(x=>x.trim()).filter(Boolean);
+
+function start(){
+ const g=id=>document.getElementById(id).value,a=T[+g('tA')],b=T[+g('tB')];
+ if(g('tA')==g('tB')){alert('Choose two different teams.');return}
+ const first=+g('first');
+ M={id:Date.now(),date:new Date().toISOString().slice(0,10),gender:a.g,overs:Math.max(1,+g('ov')||20),teams:[{name:a.name,p:[...a.p]},{name:b.name,p:[...b.p]}],innings:[mk(first,1-first)],cur:0,done:false,result:''};
+ U=[];save();r()}
+function saveT(){const g=id=>document.getElementById(id).value,p=lines(g('tp'));
+ if(!g('tn').trim()||p.length<2){alert('Enter a team name and at least 2 players.');return}
+ const t={name:g('tn').trim(),g:g('tg'),p};if(et!=null)T[et]=t;else T.push(t);et=null;save();r()}
+function delT(k){if(!confirm('Delete this team?'))return;T.splice(k,1);et=null;save();r()}
+function clearT(){if(!confirm('Clear all saved teams? Do this only when the event is over.'))return;T=[];et=null;save();r()}
+function teamsV(){const e=et!=null?T[et]:{name:'',g:'Male',p:[]};
+ return `<div class="c"><h2 style="margin-top:0">${et!=null?'Edit team':'Add team'}</h2><label>Team name</label><input id="tn" value="${esc(e.name)}"><label>Category</label><select id="tg"><option${e.g=='Male'?' selected':''}>Male</option><option${e.g=='Female'?' selected':''}>Female</option></select><label>Players (one per line)</label><textarea id="tp" rows="8">${esc(e.p.join('\n'))}</textarea><p><button class="b2 p" onclick="saveT()">Save team</button>${et!=null?'<button class="b2" onclick="et=null;r()">Cancel</button>':''}</p></div>`+(T.length?`<div class="c"><b>Saved teams (${T.length})</b>`+T.map((t,k)=>`<p><b>${esc(t.name)}</b> <span class="mu">${t.g} · ${t.p.length} players</span><br><button class="b2" onclick="et=${k};r();scrollTo(0,0)">Edit</button><button class="b2 d" onclick="delT(${k})">Delete</button></p>`).join('')+`<button class="b2 d" onclick="clearT()">Event over: clear all teams</button></div>`:'<div class="c mu">No teams saved yet. Saved teams stay until you clear them.</div>')}
+
+function swap(i){[i.s,i.n]=[i.n,i.s]}
+function setR(k,v){const i=M.innings[M.cur];if(!v)return;i[k]=v;k=='b'?bw(i,v):bt(i,v);save();r()}
+
+function ball(t,x){
+ const i=M.innings[M.cur];if(M.done||!i.s||!i.n||!i.b)return;
+ U.push(JSON.stringify(M));if(U.length>40)U.shift();
+ const B=bt(i,i.s),W=bw(i,i.b);let lab,legal=true;
+ if(t=='run'){B.r+=x;B.b++;x==4&&B.f++;x==6&&B.s++;W.r+=x;W.b++;i.runs+=x;i.balls++;lab=''+x;x%2&&swap(i)}
+ else if(t=='wd'){W.r++;i.runs++;i.ex++;lab='Wd';legal=false}
+ else if(t=='nb'){W.r++;i.runs++;i.ex++;lab='Nb';legal=false}
+ else if(t=='bye'){B.b++;W.b++;i.runs++;i.ex++;i.balls++;lab='B1';swap(i)}
+ 
+ M.last={n:(M.last?M.last.n:0)+1,ts:Date.now(),l:lab,t:i.s+(lab=='4'?' hits a boundary':lab=='6'?' hits a huge six':'')};
+ endBall(i,legal,lab)}
+function endBall(i,legal,lab){
+ i.over.push(lab);
+ if(legal&&i.balls%6==0){ if(i.s===null){i.s=i.n;i.n=null}else if(i.n===null){i.n=i.s;i.s=null}else swap(i); i.lastB=i.b;i.b=null;i.over=[]}
+ chk();save();r();pop(M.last)}
+function openW(){const i=M.innings[M.cur];wk={t:'Bowled',f:'',who:i.s,r:0};r()}
+function out(){
+ const i=M.innings[M.cur];if(!wk||M.done||!i.s||!i.n||!i.b)return;
+ if(['Caught','Stumped'].includes(wk.t)&&!wk.f){alert('Select the fielder.');return}
+ U.push(JSON.stringify(M));
+ const ro=wk.t=='Run out',run=ro?wk.r:0,W=bw(i,i.b),b=i.b,f=wk.f;
+ if(run){bt(i,i.s).r+=run;W.r+=run;i.runs+=run}
+ bt(i,i.s).b++;W.b++;i.balls++;if(run%2)swap(i);
+ const who=ro?wk.who:i.s,X=bt(i,who);
+ X.out={Bowled:'b '+b,Caught:f==b?'c & b '+b:'c '+f+' b '+b,LBW:'lbw b '+b,Stumped:'st '+f+' b '+b,'Hit wicket':'hit wicket b '+b,'Run out':'run out'+(f?' ('+f+')':'')}[wk.t];
+ if(!ro)W.w++;i.wkts++;i.fow.push(i.runs+'/'+i.wkts+' ('+who+')');
+ if(i.s==who)i.s=null;else i.n=null;
+ M.last={n:(M.last?M.last.n:0)+1,ts:Date.now(),l:'W',t:who+' '+X.out};
+ wk=null;endBall(i,true,run?'W'+run:'W')}
+function wkP(i,O){
+ const sel=(k,l,v)=>`<label>${l}</label><select onchange="wk.${k}=${k=='r'?'+':''}this.value;r()">${v.map(x=>`<option value="${esc(x)}"${String(x)==String(wk[k])?' selected':''}>${x===''?'Select player':esc(x)}</option>`).join('')}</select>`;
+ return `<div class="c pick"><b>How was the batter out?</b>${sel('t','Dismissal',['Bowled','Caught','LBW','Run out','Stumped','Hit wicket'])}${['Caught','Stumped','Run out'].includes(wk.t)?sel('f',wk.t=='Caught'?'Caught by':wk.t=='Stumped'?'Wicketkeeper':'Fielder (optional)',['',...O.p]):''}${wk.t=='Run out'?sel('who','Batter run out',[i.s,i.n])+sel('r','Runs completed before run out',[0,1,2,3]):''}<p><button class="b2 d" onclick="out()">Confirm out</button><button class="b2" onclick="wk=null;r()">Cancel</button></p></div>`}
+
+function undo(){if(!U.length)return;M=JSON.parse(U.pop());wk=null;H=H.filter(h=>h.id!=M.id);save();r()}
+
+function chk(){
+ const i=M.innings[M.cur],n=M.teams[i.bat].p.length-1,tg=M.cur?M.innings[0].runs:null;
+ if(i.wkts>=n||i.balls>=M.overs*6||(tg!==null&&i.runs>tg)){
+  if(M.cur==0){M.cur=1;M.innings.push(mk(i.bowl,i.bat))}else finish()}}
+function finish(){
+ const a=M.innings[0],b=M.innings[1],A=M.teams[a.bat].name,Bn=M.teams[b.bat].name;
+ M.result=b.runs>a.runs?Bn+' won by '+(M.teams[b.bat].p.length-1-b.wkts)+' wickets':b.runs<a.runs?A+' won by '+(a.runs-b.runs)+' runs':'Match tied';
+ M.done=true;H=H.filter(h=>h.id!=M.id);H.unshift(M)}
+function endNow(){if(!confirm('End match now and save it?'))return;
+ if(M.cur==0){M.cur=1;M.innings.push(mk(M.innings[0].bowl,M.innings[0].bat))}
+ finish();save();r()}
+function newM(){M=null;U=[];save();r()}
+function del(id){if(!confirm('Delete this match record?'))return;H=H.filter(h=>h.id!=id);view=null;save();r()}
+
+function card(m){return m.innings.map((i,k)=>{
+ const T=m.teams[i.bat],O=m.teams[i.bowl],fin=m.done||k<m.cur;
+ const rows=Object.keys(i.B).map(n=>{const x=i.B[n];return `<tr><td>${esc(n)}<small>${x.out?esc(x.out):fin?'not out':(n==i.s||n==i.n)?'batting':'not out'}</small></td><td><b>${x.r}</b></td><td>${x.b}</td><td>${x.f}</td><td>${x.s}</td><td>${x.b?(x.r*100/x.b).toFixed(0):'-'}</td></tr>`}).join('');
+ const dnb=T.p.filter(p=>!i.B[p]);
+ const bro=Object.keys(i.W).map(n=>{const x=i.W[n];return `<tr><td>${esc(n)}</td><td>${ov(x.b)}</td><td>${x.r}</td><td><b>${x.w}</b></td><td>${x.b?(x.r*6/x.b).toFixed(1):'-'}</td></tr>`}).join('');
+ return `<div class="c"><h3 style="margin:0 0 6px">${esc(T.name)} <span class="num">${i.runs}/${i.wkts}</span> <span class="mu">(${ov(i.balls)} ov)</span></h3>
+ <div class="tbl"><table><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>${rows}</table></div>
+ <p class="mu">Extras ${i.ex}${dnb.length?' · Did not bat: '+esc(dnb.join(', ')):''}${i.fow.length?'<br>Fall of wickets: '+esc(i.fow.join(', ')):''}</p>
+ <div class="tbl"><table><tr><th>Bowler (${esc(O.name)})</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr>${bro||'<tr><td colspan=5>–</td></tr>'}</table></div></div>`}).join('')}
+
+function head(m){return `<div class="c sb"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} overs</div>
+ <h2 style="margin:2px 0">${esc(m.teams[0].name)} vs ${esc(m.teams[1].name)}</h2>${m.done?`<div class="res">${esc(m.result)}</div>`:''}</div>`}
+
+function opts(list,ph){return `<option value="">${ph}</option>`+list.map(p=>`<option>${esc(p)}</option>`).join('')}
+
+function live(){
+ if(!M&&!CAN)return '<div class="c">No match is live right now. This page updates by itself when scoring starts.</div>';
+ if(!M)return T.length<2?`<div class="c"><h2 style="margin-top:0">New match</h2><p>Save at least two teams with their players first. They stay saved until you clear them.</p><button class="b2 p" onclick="tab='teams';r()">Go to Teams</button></div>`:`<div class="c"><h2 style="margin-top:0">New match</h2><div class="r2"><div><label>Team A</label><select id="tA">${T.map((t,k)=>`<option value="${k}">${esc(t.name)} (${t.g})</option>`).join('')}</select></div><div><label>Team B</label><select id="tB">${T.map((t,k)=>`<option value="${k}"${k==1?' selected':''}>${esc(t.name)} (${t.g})</option>`).join('')}</select></div></div><div class="r2"><div><label>Overs</label><input id="ov" type="number" value="20" min="1"></div><div><label>Batting first</label><select id="first"><option value="0">Team A</option><option value="1">Team B</option></select></div></div><p class="mu">Category follows Team A.</p><p><button class="b2 p" onclick="start()">Start match</button></p></div>`;
+ const i=M.innings[M.cur],BT=M.teams[i.bat],O=M.teams[i.bowl],tg=M.cur?M.innings[0].runs+1:null;
+ let h=head(M);
+ if(M.done)return h+card(M)+`<div class="noprint"><button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="shareScore(${m.id})">Share</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2" onclick="newM()">New match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`;
+ const left=M.overs*6-i.balls;
+ h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>
+ <div class="mu">Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
+ const bats=BT.p.filter(p=>!(i.B[p]&&i.B[p].out)&&p!=i.s&&p!=i.n);
+ const need=[];
+ const nb=Object.keys(i.B).length>=2;
+ if(!i.s)need.push(['s',nb?'Next batter':'Striker',bats.filter(p=>p!=i.n)]);
+ if(!i.n)need.push(['n',nb?'Next batter':'Non-striker',bats.filter(p=>p!=i.s)]);
+ if(!i.b)need.push(['b','Bowler for this over',O.p.filter(p=>p!=i.lastB)]);
+ if(need.length&&!CAN)return h+'<div class="c mu">Waiting for the scorer…</div>'+card(M);
+ if(need.length)return h+`<div class="c pick"><b>Choose to continue</b>${i.balls&&i.balls%6==0&&!M.done?'<p><button class="b2 p" onclick="shareScore()">Share over summary</button></p>':''}${need.map(n=>`<label>${n[1]}</label><select onchange="setR('${n[0]}',this.value)">${opts(n[2],'Select player')}</select>`).join('')}
+ <p><button class="b2 d" onclick="undo()">Undo last ball</button></p></div>`+card(M);
+ const bs=n=>{const x=i.B[n];return `<tr><td>${esc(n)}${n==i.s?' *':''}</td><td><b>${x.r}</b></td><td>${x.b}</td><td>${x.f}</td><td>${x.s}</td><td>${x.b?(x.r*100/x.b).toFixed(0):'-'}</td></tr>`},w=i.W[i.b];
+ h+=`<div class="c noprint"><div class="tbl"><table><tr><th>Batting</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>${bs(i.s)}${bs(i.n)}</table>
+ <table><tr><th>Bowling</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr><tr><td>${esc(i.b)}</td><td>${ov(w.b)}</td><td>${w.r}</td><td><b>${w.w}</b></td><td>${w.b?(w.r*6/w.b).toFixed(1):'-'}</td></tr></table></div>
+ <div class="ov">${i.over.map(x=>`<span class="${/^W\d?$/.test(x)?'x':/^(4|6)$/.test(x)?'f':''}">${x}</span>`).join('')||'<span>–</span>'}</div>
+ ${CAN?`${wk?wkP(i,O):''}<div class="g"${wk?' style="display:none"':''}>${[0,1,2,3].map(n=>`<button onclick="ball('run',${n})">${n}</button>`).join('')}
+ <button class="w4" onclick="ball('run',4)">4</button><button class="w4" onclick="ball('run',6)">6</button><button class="wk" onclick="openW()">OUT</button><button onclick="ball('bye')">Bye</button>
+ <button onclick="ball('wd')">Wide</button><button onclick="ball('nb')">No ball</button><button onclick="swap(M.innings[M.cur]);save();r()">Swap</button><button onclick="undo()">Undo</button></div>
+ <button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 d" onclick="endNow()">End match &amp; save</button>`:''}</div>`;
+ return h+card(M)}
+
+function matches(){
+ if(view){const m=H.find(x=>x.id==view);if(m)return `<div class="noprint"><button class="b2" onclick="view=null;r()">Back</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 d" onclick="del('+m.id+')">Delete</button>':''}</div>`+head(m)+card(m)}
+ if(!H.length)return '<div class="c">No finished matches yet. Completed matches are saved here automatically.</div>';
+ return H.map(m=>{const a=m.innings[0],b=m.innings[1]||{runs:0,wkts:0};return `<div class="c" onclick="view=${m.id};r()" style="cursor:pointer"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} ov</div>
+ <b>${esc(m.teams[a.bat].name)} ${a.runs}/${a.wkts}</b> vs <b>${esc(m.teams[a.bowl].name)} ${b.runs}/${b.wkts}</b><div class="res">${esc(m.result)}</div></div>`}).join('')}
+
+function agg(){const a={};
+ H.forEach(m=>m.innings.forEach(i=>{
+  for(const n in i.B){const k=m.gender+'|'+n,x=a[k]||(a[k]={n,g:m.gender,t:m.teams[i.bat].name,r:0,b:0,f:0,s:0,wb:0,wr:0,w:0});const y=i.B[n];x.r+=y.r;x.b+=y.b;x.f+=y.f;x.s+=y.s}
+  for(const n in i.W){const k=m.gender+'|'+n,x=a[k]||(a[k]={n,g:m.gender,t:m.teams[i.bowl].name,r:0,b:0,f:0,s:0,wb:0,wr:0,w:0});const y=i.W[n];x.wb+=y.b;x.wr+=y.r;x.w+=y.w}}));
+ return Object.values(a)}
+function leaders(){
+ const A=agg();
+ return ['Male','Female'].map(g=>{
+  const P=A.filter(x=>x.g==g),B=P.filter(x=>x.b).sort((a,b)=>b.r-a.r).slice(0,5),W=P.filter(x=>x.wb).sort((a,b)=>b.w-a.w||a.wr/a.wb-b.wr/b.wb).slice(0,5);
+  const bb=B[0],bw_=W[0];
+  return `<h2>${g}</h2>`+(!bb?'<div class="c">No data yet.</div>':`
+  <div class="best">Best batter<br><b>${esc(bb.n)}</b> · ${bb.r} runs (${bb.b} balls, SR ${(bb.r*100/bb.b).toFixed(0)}) · ${esc(bb.t)}</div>
+  <div class="c tbl"><table><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>${B.map(x=>`<tr><td>${esc(x.n)}<small>${esc(x.t)}</small></td><td><b>${x.r}</b></td><td>${x.b}</td><td>${x.f}</td><td>${x.s}</td><td>${(x.r*100/x.b).toFixed(0)}</td></tr>`).join('')}</table></div>
+  ${bw_?`<div class="best">Best bowler<br><b>${esc(bw_.n)}</b> · ${bw_.w} wickets, economy ${(bw_.wr*6/bw_.wb).toFixed(1)} · ${esc(bw_.t)}</div>
+  <div class="c tbl"><table><tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr>${W.map(x=>`<tr><td>${esc(x.n)}<small>${esc(x.t)}</small></td><td>${ov(x.wb)}</td><td>${x.wr}</td><td><b>${x.w}</b></td><td>${(x.wr*6/x.wb).toFixed(1)}</td></tr>`).join('')}</table></div>`:''}`)}).join('')}
+
+function r(){
+ st();
+ $n=document.getElementById('nav');
+ $n.innerHTML=[['live','Live'],['matches','Matches'],['top','Best players']].concat(CAN?[['teams','Teams']]:[]).map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';view=null;try{sessionStorage.sb_t=tab}catch(e){}r();scrollTo(0,0)">${t[1]}</button>`).join('');
+ document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='teams'&&CAN?teamsV():leaders();
+}
+(()=>{
+ if(!CAN&&tab=='teams')tab='live';
+ r();try{setTimeout(()=>scrollTo(0,+(sessionStorage.sb_y||0)),0);addEventListener('scroll',()=>{sessionStorage.sb_y=scrollY})}catch(e){}
+ if(VIEWER){poll();setInterval(poll,5000)}else st()})();
+</script></body></html>
