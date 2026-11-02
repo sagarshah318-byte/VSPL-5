@@ -112,8 +112,14 @@ async function resetTournament(){
   await window.html2pdf().set({margin:8,filename,image:{type:'jpeg',quality:0.96},html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(archive).save();
   archive.remove();
   if(!confirm('The PDF download has been started. Check your Downloads folder. Do you want to permanently clear all match records now? Saved teams will remain.')){resetBusy=false;return}
-  H=[];M=null;U=[];wk=null;view=null;tab='live';save();r();
-  alert('Tournament match records have been reset. Your teams are still saved.');
+  const oldH=H,oldM=M,oldU=U;
+  H=[];M=null;U=[];wk=null;view=null;tab='live';save();clearTimeout(pt);await push();
+  if(!SY.startsWith('live · sent')){
+   H=oldH;M=oldM;U=oldU;save();clearTimeout(pt);await push();r();
+   alert('The reset could not be confirmed on the live server. Your match records have been restored on this device. Nothing has been intentionally cleared. Please check the scorer connection before trying again.');
+   return;
+  }
+  r();alert('Tournament match records have been reset and synced. Your teams are still saved.');
  }catch(e){
   archive.remove();alert('PDF creation failed. No match data was reset. Error: '+(e.message||e));
  }finally{resetBusy=false}
