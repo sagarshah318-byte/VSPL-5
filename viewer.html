@@ -96,8 +96,6 @@ function refreshViewer(){dg('Refreshing score…');poll().catch(e=>dg('Refresh f
 async function poll(){
  let n=null,source='';
  const errors=[];
- // Read the live score from raw GitHub content. Unlike the GitHub API, this avoids
- // the low unauthenticated API rate limit when many family members watch together.
  try{
   const u='https://raw.githubusercontent.com/'+DATA_REPO+'/'+BR+'/state.json?ts='+Date.now();
   const g=await fetch(u,{cache:'no-store'});
@@ -106,19 +104,23 @@ async function poll(){
   if(!n||!n.M)throw new Error('Invalid live score data');
   source='Live GitHub';
  }catch(e){errors.push(e.message||'Live score fetch failed')}
- // API fallback only if the raw content endpoint is unavailable.
- if(!n){
+ // A successful raw response can still be an old CDN copy. When its data is
+ // stale, verify against GitHub's Contents API instead of trusting that copy.
+ const rawAge=Date.now()-Number(n&&n.ts||0);
+ const needsVerify=!n||rawAge>20000||Number(n.ts)<Number(S.ts||0);
+ if(needsVerify&&Date.now()-lastApiCheck>45000){
+  lastApiCheck=Date.now();
   try{
    const u='https://api.github.com/repos/'+DATA_REPO+'/contents/state.json?ref='+BR+'&ts='+Date.now();
-   const g=await fetch(u,{cache:'no-store'});
+   const g=await fetch(u,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
    if(!g.ok)throw new Error('GitHub API '+g.status);
    const j=await g.json();
    const b64=(j.content||'').replace(/\\s/g,'');
    const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
-   n=JSON.parse(new TextDecoder().decode(bytes));
-   if(!n||!n.M)throw new Error('Invalid score data');
-   source='GitHub API backup';
-  }catch(e){errors.push(e.message||'GitHub API fetch failed')}
+   const fresh=JSON.parse(new TextDecoder().decode(bytes));
+   if(!fresh||!fresh.M)throw new Error('Invalid API score data');
+   if(!n||Number(fresh.ts)>Number(n.ts||0)){n=fresh;source='GitHub API verified'}
+  }catch(e){errors.push(e.message||'GitHub API verification failed')}
  }
  if(!n)throw new Error(errors.join(' · ')||'No score data received');
  dg('● live · '+source+' · data '+new Date(n.ts).toLocaleTimeString()+(errors.length?' · '+errors.join(' / '):''));
