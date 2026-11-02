@@ -1,4 +1,4 @@
-import {json,currentUser} from "../_middleware.js";
+import {json,approvedUser} from "../lib/auth.js";
 const REPO="sagarshah318-byte/VSPL-5-Live-Data", PATH="state.json", BRANCH="main";
 export async function onRequestGet({env}) {
  const h={Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
@@ -10,7 +10,7 @@ export async function onRequestGet({env}) {
  return new Response(decoded,{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","ETag":d.sha}});
 }
 export async function onRequestPost({request,env}) {
- const user=await currentUser(request,env);
+ const user=await approvedUser(request,env);
  if(!user) return json({error:"Scoring access is not approved or has expired."},403);
  if(!env.SCORE_GITHUB_TOKEN) return json({error:"Server score token is not configured."},503);
  const payload=await request.json().catch(()=>null);
