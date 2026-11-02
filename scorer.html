@@ -51,7 +51,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 @media(prefers-reduced-motion:reduce){.cf{display:none}.pop .bx{animation:none}}
 @media print{body{background:#fff;color:#000}.noprint,.pop{display:none!important}.c{border:1px solid #999;break-inside:avoid}}
 </style></head><body><div class="w">
-<header class="noprint"><h1>🏏 Cricket Scorebook</h1><span id="st" class="mu"></span></header>
+<header class="noprint"><h1>🏏 Cricket Scorebook</h1><div style="display:flex;align-items:center;gap:8px"><span id="st" class="mu"></span><button type="button" class="b2" id="tokenBtn">Update Token</button></div></header>
 <nav class="noprint" id="nav"></nav>
 <div id="app"></div></div>
 <script id="state" type="application/json">{"T": [{"name": "Prahil Panthers", "g": "Male", "p": ["Jigar Shah", "Shrenil Shiroya", "Harsh Shah", "Nilay Bhandari", "Kunal Shah", "Raj Shah", "Amol Shah", "Rajesh Shah"]}, {"name": "Neevansh Warrios", "g": "Male", "p": ["Atul Shah", "Nitya Shah", "Jignesh Shah", "Akshay Shah", "Keyur Shah", "Kalpesh Shah", "Krunal Shah", "Maahir Shah"]}]}</script>
@@ -91,6 +91,8 @@ async function push(){
  }catch(e){SY='send failed: '+(e.message||e)}
  busy=false;st();if(dirty){dirty=false;push()}}
 function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
+function updateToken(){const t=prompt('Paste your new GitHub token. It will be saved only on this phone. Do not share it in chat.');if(t&&t.trim()){TOK=t.trim();try{localStorage.setItem('sb_tok',TOK)}catch(e){}SHA=null;SY='token updated · make a score update to test';st()}}
+document.getElementById('tokenBtn').addEventListener('click',updateToken);
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
 async function poll(){
  try{const g=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
