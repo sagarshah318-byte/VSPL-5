@@ -1,4 +1,4 @@
-import {cookie,json,redirect,sha256} from "../../_middleware.js";
+import {cookie,json,redirect,sha256} from "../../lib/auth.js";
 export async function onRequestGet({request,env}) {
   const u=new URL(request.url),code=u.searchParams.get("code"),state=u.searchParams.get("state");
   if(!code || !state || state!==cookie(request,"vspl_oauth_state")) return json({error:"Sign-in expired. Please try again."},400);
