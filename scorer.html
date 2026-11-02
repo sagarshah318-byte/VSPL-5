@@ -190,7 +190,7 @@ function finish(){
 function endNow(){if(!confirm('End match now and save it?'))return;
  if(M.cur==0){M.cur=1;M.innings.push(mk(M.innings[0].bowl,M.innings[0].bat))}
  finish();save();r()}
-function newM(){M=null;U=[];save();r()}
+function newM(){if(M&&!M.done){alert('Finish or save the current match before starting another.');return}M=null;U=[];wk=null;view=null;tab='live';save();r();scrollTo(0,0)}
 function del(id){if(!confirm('Delete this match record?'))return;H=H.filter(h=>h.id!=id);view=null;save();r()}
 
 function card(m){return m.innings.map((i,k)=>{
@@ -213,7 +213,7 @@ function live(){
  if(!M)return T.length<2?`<div class="c"><h2 style="margin-top:0">New match</h2><p>Save at least two teams with their players first. They stay saved until you clear them.</p><button class="b2 p" onclick="tab='teams';r()">Go to Teams</button></div>`:`<div class="c"><h2 style="margin-top:0">New match</h2><div class="r2"><div><label>Team A</label><select id="tA">${T.map((t,k)=>`<option value="${k}">${esc(t.name)} (${t.g})</option>`).join('')}</select></div><div><label>Team B</label><select id="tB">${T.map((t,k)=>`<option value="${k}"${k==1?' selected':''}>${esc(t.name)} (${t.g})</option>`).join('')}</select></div></div><div class="r2"><div><label>Overs</label><input id="ov" type="number" value="20" min="1"></div><div><label>Batting first</label><select id="first"><option value="0">Team A</option><option value="1">Team B</option></select></div></div><p class="mu">Category follows Team A.</p><p><button class="b2 p" onclick="start()">Start match</button></p></div>`;
  const i=M.innings[M.cur],BT=M.teams[i.bat],O=M.teams[i.bowl],tg=M.cur?M.innings[0].runs+1:null;
  let h=head(M);
- if(M.done)return h+card(M)+`<div class="noprint"><button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="shareScore(${m.id})">Share</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2" onclick="newM()">New match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`;
+ if(M.done)return h+card(M)+`<div class="noprint"><button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 p" onclick="newM()">＋ New match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`;
  const left=M.overs*6-i.balls;
  h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>
  <div class="mu">Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
@@ -237,9 +237,11 @@ function live(){
  return h+card(M)}
 
 function matches(){
- if(view){const m=H.find(x=>x.id==view);if(m)return `<div class="noprint"><button class="b2" onclick="view=null;r()">Back</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 d" onclick="del('+m.id+')">Delete</button>':''}</div>`+head(m)+card(m)}
- if(!H.length)return '<div class="c">No finished matches yet. Completed matches are saved here automatically.</div>';
- return H.map(m=>{const a=m.innings[0],b=m.innings[1]||{runs:0,wkts:0};return `<div class="c" onclick="view=${m.id};r()" style="cursor:pointer"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} ov</div>
+ const canNew=CAN&&(!M||M.done);
+ const action=canNew?'<div class="c noprint"><button class="b2 p" onclick="newM()">＋ New match</button></div>':'';
+ if(view){const m=H.find(x=>x.id==view);if(m)return action+`<div class="noprint"><button class="b2" onclick="view=null;r()">Back</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 d" onclick="del('+m.id+')">Delete</button>':''}</div>`+head(m)+card(m)}
+ if(!H.length)return action+'<div class="c">No finished matches yet. Completed matches will be saved here automatically.</div>';
+ return action+H.map(m=>{const a=m.innings[0],b=m.innings[1]||{runs:0,wkts:0};return `<div class="c" onclick="view=${m.id};r()" style="cursor:pointer"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} ov</div>
  <b>${esc(m.teams[a.bat].name)} ${a.runs}/${a.wkts}</b> vs <b>${esc(m.teams[a.bowl].name)} ${b.runs}/${b.wkts}</b><div class="res">${esc(m.result)}</div></div>`}).join('')}
 
 function agg(){const a={};
