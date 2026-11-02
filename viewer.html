@@ -115,7 +115,7 @@ async function poll(){
    const g=await fetch(u,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
    if(!g.ok)throw new Error('GitHub API '+g.status);
    const j=await g.json();
-   const b64=(j.content||'').replace(/\\s/g,'');
+   const b64=(j.content||'').replace(/\s/g,'');
    const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
    const fresh=JSON.parse(new TextDecoder().decode(bytes));
    if(!fresh||!fresh.M)throw new Error('Invalid API score data');
