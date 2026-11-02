@@ -159,11 +159,16 @@ const bt=(i,k)=>i.B[k]||(i.B[k]={r:0,b:0,f:0,s:0,out:''});
 const bw=(i,k)=>i.W[k]||(i.W[k]={b:0,r:0,w:0});
 const lines=v=>v.split(/[\n,]/).map(x=>x.trim()).filter(Boolean);
 
+function teamOptions(){
+ const a=T[+document.getElementById('tA').value],b=T[+document.getElementById('tB').value];
+ const fill=(id,t)=>{const e=document.getElementById(id),old=e.value;e.innerHTML=opts(t.p,'Select captain');if(t.p.includes(old))e.value=old};
+ fill('capA',a);fill('capB',b)}
 function start(){
  const g=id=>document.getElementById(id).value,a=T[+g('tA')],b=T[+g('tB')];
  if(g('tA')==g('tB')){alert('Choose two different teams.');return}
- const first=+g('first');
- M={id:Date.now(),date:new Date().toISOString().slice(0,10),gender:a.g,overs:Math.max(1,+g('ov')||20),teams:[{name:a.name,p:[...a.p]},{name:b.name,p:[...b.p]}],innings:[mk(first,1-first)],cur:0,done:false,result:''};
+ if(!g('capA')||!g('capB')){alert('Please select both team captains.');return}
+ const toss=+g('toss'),first=g('decision')==='bat'?toss:1-toss;
+ M={id:Date.now(),date:new Date().toISOString().slice(0,10),gender:a.g,overs:Math.max(1,+g('ov')||20),toss:{winner:toss,decision:g('decision')},teams:[{name:a.name,p:[...a.p],captain:g('capA')},{name:b.name,p:[...b.p],captain:g('capB')}],innings:[mk(first,1-first)],cur:0,done:false,result:''};
  U=[];save();r()}
 function saveT(){const g=id=>document.getElementById(id).value,p=lines(g('tp'));
  if(!g('tn').trim()||p.length<2){alert('Enter a team name and at least 2 players.');return}
@@ -225,7 +230,22 @@ function endNow(){if(!confirm('End match now and save it?'))return;
 function newM(){M=null;U=[];save();r()}
 function del(id){if(!confirm('Delete this match record?'))return;H=H.filter(h=>h.id!=id);view=null;save();r()}
 
-function card(m){return m.innings.map((i,k)=>{
+function matchAwards(m){
+ const bat=[],bowl=[];
+ m.innings.forEach(i=>{
+  for(const n in i.B){const x=i.B[n];if(x.b)bat.push({n,t:m.teams[i.bat].name,r:x.r,b:x.b})}
+  for(const n in i.W){const x=i.W[n];if(x.b)bowl.push({n,t:m.teams[i.bowl].name,w:x.w,r:x.r,b:x.b,e:x.r*6/x.b})}
+ });
+ const maxRuns=bat.length?Math.max(...bat.map(x=>x.r)):-1,topBat=bat.filter(x=>x.r===maxRuns);
+ const maxW=bowl.length?Math.max(...bowl.map(x=>x.w)):-1,topW=maxW<0?[]:bowl.filter(x=>x.w===maxW);
+ const bestE=topW.length?Math.min(...topW.map(x=>x.e)):Infinity,topBowl=topW.filter(x=>Math.abs(x.e-bestE)<0.000001);
+ const names=a=>a.map(x=>esc(x.n)+' <small>'+esc(x.t)+'</small>').join(', ');
+ return '<div class="c"><h2 style="margin:0 0 8px">🏆 Individual Match Awards</h2>'+
+ (topBat.length?'<div class="best">Best Batter'+(topBat.length>1?'s':'')+'<br><b>'+names(topBat)+'</b><br>'+maxRuns+' runs'+(topBat.length===1?' · '+topBat[0].b+' balls · SR '+(topBat[0].r*100/topBat[0].b).toFixed(0):' · tied')+'</div>':'<div class="mu">Best Batter: No batting data available.</div>')+
+ (topBowl.length?'<div class="best">Best Bowler'+(topBowl.length>1?'s':'')+'<br><b>'+names(topBowl)+'</b><br>'+maxW+' wickets · '+bestE.toFixed(1)+' economy'+(topBowl.length>1?' · tied':'')+'</div>':'<div class="mu">Best Bowler: No bowling data available.</div>')+
+ '<p class="mu">Best batter is decided by highest runs. Best bowler is decided by most wickets, with lower economy as the tie-breaker.</p></div>';
+}
+function card(m){return (m.done?matchAwards(m):'')+m.innings.map((i,k)=>{
  const T=m.teams[i.bat],O=m.teams[i.bowl],fin=m.done||k<m.cur;
  const rows=Object.keys(i.B).map(n=>{const x=i.B[n];return `<tr><td>${esc(n)}<small>${x.out?esc(x.out):fin?'not out':(n==i.s||n==i.n)?'batting':'not out'}</small></td><td><b>${x.r}</b></td><td>${x.b}</td><td>${x.f}</td><td>${x.s}</td><td>${x.b?(x.r*100/x.b).toFixed(0):'-'}</td></tr>`}).join('');
  const dnb=T.p.filter(p=>!i.B[p]);
@@ -236,16 +256,16 @@ function card(m){return m.innings.map((i,k)=>{
  <div class="tbl"><table><tr><th>Bowler (${esc(O.name)})</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr>${bro||'<tr><td colspan=5>–</td></tr>'}</table></div></div>`}).join('')}
 
 function head(m){return `<div class="c sb"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} overs</div>
- <h2 style="margin:2px 0">${esc(m.teams[0].name)} vs ${esc(m.teams[1].name)}</h2>${m.done?`<div class="res">${esc(m.result)}</div>`:''}</div>`}
+ <h2 style="margin:2px 0">${esc(m.teams[0].name)} vs ${esc(m.teams[1].name)}</h2>${m.teams[0].captain||m.teams[1].captain?'<div class="mu">Captains: '+esc(m.teams[0].captain||'Not set')+' · '+esc(m.teams[1].captain||'Not set')+'</div>':''}${m.toss?'<div class="mu">Toss: '+esc(m.teams[m.toss.winner].name)+' won and chose to '+(m.toss.decision==='bat'?'bat':'bowl')+'</div>':''}${m.done?`<div class="res">${esc(m.result)}</div>`:''}</div>`}
 
 function opts(list,ph){return `<option value="">${ph}</option>`+list.map(p=>`<option>${esc(p)}</option>`).join('')}
 
 function live(){
  if(!M&&!CAN)return '<div class="c">No match is live right now. This page updates by itself when scoring starts.</div>';
- if(!M)return T.length<2?`<div class="c"><h2 style="margin-top:0">New match</h2><p>Save at least two teams with their players first. They stay saved until you clear them.</p><button class="b2 p" onclick="tab='teams';r()">Go to Teams</button></div>`:`<div class="c"><h2 style="margin-top:0">New match</h2><div class="r2"><div><label>Team A</label><select id="tA">${T.map((t,k)=>`<option value="${k}">${esc(t.name)} (${t.g})</option>`).join('')}</select></div><div><label>Team B</label><select id="tB">${T.map((t,k)=>`<option value="${k}"${k==1?' selected':''}>${esc(t.name)} (${t.g})</option>`).join('')}</select></div></div><div class="r2"><div><label>Overs</label><input id="ov" type="number" value="20" min="1"></div><div><label>Batting first</label><select id="first"><option value="0">Team A</option><option value="1">Team B</option></select></div></div><p class="mu">Category follows Team A.</p><p><button class="b2 p" onclick="start()">Start match</button></p></div>`;
+ if(!M)return T.length<2?`<div class="c"><h2 style="margin-top:0">New match</h2><p>Save at least two teams with their players first. They stay saved until you clear them.</p><button class="b2 p" onclick="tab='teams';r()">Go to Teams</button></div>`:`<div class="c"><h2 style="margin-top:0">New match</h2><div class="r2"><div><label>Team A</label><select id="tA" onchange="teamOptions()">${T.map((t,k)=>`<option value="${k}">${esc(t.name)} (${t.g})</option>`).join('')}</select></div><div><label>Team B</label><select id="tB" onchange="teamOptions()">${T.map((t,k)=>`<option value="${k}"${k==1?' selected':''}>${esc(t.name)} (${t.g})</option>`).join('')}</select></div></div><div class="r2"><div><label>Overs</label><input id="ov" type="number" value="20" min="1"></div><div><label>Toss won by</label><select id="toss"><option value="0">Team A</option><option value="1">Team B</option></select></div></div><div class="r2"><div><label>Team A Captain</label><select id="capA"></select></div><div><label>Team B Captain</label><select id="capB"></select></div></div><label>Toss decision</label><select id="decision"><option value="bat">Winner chose to bat</option><option value="bowl">Winner chose to bowl</option></select><p class="mu">Category follows Team A. Select both captains and record the toss before starting.</p><p><button class="b2 p" onclick="start()">Start match</button></p></div>`;
  const i=M.innings[M.cur],BT=M.teams[i.bat],O=M.teams[i.bowl],tg=M.cur?M.innings[0].runs+1:null;
  let h=head(M);
- if(M.done)return h+card(M)+`<div class="noprint">${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}<button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2" onclick="newM()">New match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`;
+ if(M.done)return h+card(M)+`<div class="c"><h3 style="margin:0 0 4px">🏏 Match completed!</h3><p style="margin:0">Thank you for following the match. The next match will begin soon. Stay tuned for live updates.</p></div><div class="noprint">${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}<button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 p" onclick="newM()">＋ Start New Match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`
  const left=M.overs*6-i.balls;
  h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}</div>
  <div class="mu">Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
@@ -294,7 +314,7 @@ function r(){
  st();
  $n=document.getElementById('nav');
  $n.innerHTML=[['live','Live'],['matches','Matches'],['top','Best players']].concat(CAN?[['teams','Teams']]:[]).map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';view=null;try{sessionStorage.sb_t=tab}catch(e){}r();scrollTo(0,0)">${t[1]}</button>`).join('');
- document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='teams'&&CAN?teamsV():leaders();
+ document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='teams'&&CAN?teamsV():leaders();if(tab=='live'&&!M&&CAN&&document.getElementById('capA'))teamOptions();
 }
 (()=>{
  if(!CAN&&tab=='teams')tab='live';
