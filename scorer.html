@@ -56,7 +56,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 <div id="app"></div></div>
 <script id="state" type="application/json">{"T": [{"name": "Prahil Panthers", "g": "Male", "p": ["Jigar Shah", "Shrenil Shiroya", "Harsh Shah", "Nilay Bhandari", "Kunal Shah", "Raj Shah", "Amol Shah", "Rajesh Shah"]}, {"name": "Neevansh Warrios", "g": "Male", "p": ["Atul Shah", "Nitya Shah", "Jignesh Shah", "Akshay Shah", "Keyur Shah", "Kalpesh Shah", "Krunal Shah", "Maahir Shah"]}]}</script>
 <script>
-const VIEWER=false,BR='main';
+const VIEWER=false,BR='main',DATA_REPO='sagarshah318-byte/VSPL-5-Live-Data';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ov=b=>Math.floor(b/6)+'.'+b%6;
 let H=[],M=null,T=[],U=[],tab='live',view=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
@@ -79,7 +79,7 @@ async function push(){
  if(VIEWER)return;if(busy){dirty=true;return}
  if(!tok()){SY='no token';st();return}
  busy=true;SY='sending…';st();
- const u='https://api.github.com/repos/'+repo()+'/contents/state.json',h={Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'};
+ const u='https://api.github.com/repos/'+DATA_REPO+'/contents/state.json',h={Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'};
  try{const body=JSON.stringify({H,M,T,ts:Date.now()});
   for(let k=0;k<3;k++){
    if(!SHA){const g=await fetch(u+'?ref='+BR+'&t='+Date.now(),{headers:h,cache:'no-store'});
