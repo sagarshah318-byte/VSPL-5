@@ -1,4 +1,4 @@
-import {json,redirect} from "../_middleware.js";
+import {json,redirect} from "../../lib/auth.js";
 export async function onRequestGet({request,env}) {
   if(!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.SESSION_SECRET || !env.DB) return json({error:"Access system is not configured yet."},503);
   const state=crypto.randomUUID();
