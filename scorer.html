@@ -50,8 +50,9 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 @keyframes pp{from{transform:scale(.4);opacity:0}}
 @media(prefers-reduced-motion:reduce){.cf{display:none}.pop .bx{animation:none}}
 @media print{body{background:#fff;color:#000}.noprint,.pop{display:none!important}.c{border:1px solid #999;break-inside:avoid}}
-</style></head><body><div class="w">
-<header class="noprint"><h1>🏏 Cricket Scorebook</h1><div style="display:flex;align-items:center;gap:8px"><span id="st" class="mu"></span><button type="button" class="b2" id="tokenBtn">Update Token</button></div></header>
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head><body><div class="w">
+<header class="noprint"><h1>🏏 Cricket Scorebook</h1><div style="display:flex;align-items:center;gap:8px"><span id="st" class="mu"></span><button type="button" class="b2" id="tokenBtn">Update Token</button><button type="button" class="b2 d" id="resetBtn">Reset Tournament</button></div></header>
 <nav class="noprint" id="nav"></nav>
 <div id="app"></div></div>
 <script id="state" type="application/json">{"T": [{"name": "Prahil Panthers", "g": "Male", "p": ["Jigar Shah", "Shrenil Shiroya", "Harsh Shah", "Nilay Bhandari", "Kunal Shah", "Raj Shah", "Amol Shah", "Rajesh Shah"]}, {"name": "Neevansh Warrios", "g": "Male", "p": ["Atul Shah", "Nitya Shah", "Jignesh Shah", "Akshay Shah", "Keyur Shah", "Kalpesh Shah", "Krunal Shah", "Maahir Shah"]}]}</script>
@@ -93,6 +94,31 @@ async function push(){
 function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
 function updateToken(){const t=prompt('Paste your new GitHub token. It will be saved only on this phone. Do not share it in chat.');if(t&&t.trim()){TOK=t.trim();try{localStorage.setItem('sb_tok',TOK)}catch(e){}SHA=null;SY='token updated · make a score update to test';st()}}
 document.getElementById('tokenBtn').addEventListener('click',updateToken);
+document.getElementById('resetBtn').addEventListener('click',resetTournament);
+let resetBusy=false;
+async function resetTournament(){
+ if(resetBusy)return;
+ if(!H.length&&!M){alert('There are no match records to reset.');return}
+ if(!confirm('You are resetting the tournament. A PDF archive of all match scorecards and tournament leaders will be downloaded first. Your saved teams will be kept. Continue?'))return;
+ if(typeof window.html2pdf!=='function'){alert('PDF tool did not load. Nothing has been reset. Please check your internet connection and try again.');return}
+ resetBusy=true;
+ const all=H.slice();if(M&&!M.done)all.unshift(M);
+ const archive=document.createElement('div');
+ archive.style.cssText='background:#fff;color:#111;padding:18px;font-family:Arial,sans-serif;width:780px';
+ archive.innerHTML='<h1>VSPL Tournament Archive</h1><p>Archived on '+new Date().toLocaleString()+'</p><h2>Teams</h2>'+T.map(t=>'<p><b>'+esc(t.name)+'</b> ('+esc(t.g)+'): '+esc(t.p.join(', '))+'</p>').join('')+'<h2>Match scorecards ('+all.length+')</h2>'+all.map(m=>head(m)+card(m)).join('')+'<h2>Tournament leaders</h2>'+leaders();
+ document.body.appendChild(archive);
+ try{
+  const filename='VSPL_Tournament_Archive_'+new Date().toISOString().slice(0,10)+'.pdf';
+  await window.html2pdf().set({margin:8,filename,image:{type:'jpeg',quality:0.96},html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(archive).save();
+  archive.remove();
+  if(!confirm('The PDF download has been started. Check your Downloads folder. Do you want to permanently clear all match records now? Saved teams will remain.')){resetBusy=false;return}
+  H=[];M=null;U=[];wk=null;view=null;tab='live';save();r();
+  alert('Tournament match records have been reset. Your teams are still saved.');
+ }catch(e){
+  archive.remove();alert('PDF creation failed. No match data was reset. Error: '+(e.message||e));
+ }finally{resetBusy=false}
+}
+
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
 async function poll(){
  try{const g=await fetch('https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?t='+Date.now(),{cache:'no-store'});
