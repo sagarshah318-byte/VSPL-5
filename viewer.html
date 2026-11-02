@@ -96,27 +96,29 @@ function refreshViewer(){dg('Refreshing score…');poll().catch(e=>dg('Refresh f
 async function poll(){
  let n=null,source='';
  const errors=[];
- // Read the authoritative GitHub Contents API first, rather than trusting a cached Pages copy.
+ // Read the live score from raw GitHub content. Unlike the GitHub API, this avoids
+ // the low unauthenticated API rate limit when many family members watch together.
  try{
-  const u='https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&ts='+Date.now();
+  const u='https://raw.githubusercontent.com/'+repo()+'/'+BR+'/state.json?ts='+Date.now();
   const g=await fetch(u,{cache:'no-store'});
-  if(!g.ok)throw new Error('GitHub API '+g.status);
-  const j=await g.json();
-  const b64=(j.content||'').replace(/\s/g,'');
-  const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
-  n=JSON.parse(new TextDecoder().decode(bytes));
-  if(!n||!n.M)throw new Error('Invalid score data');
-  source='GitHub';
- }catch(e){errors.push(e.message||'GitHub fetch failed')}
- // Fallback to the Pages JSON only if the API request fails.
+  if(!g.ok)throw new Error('Live score '+g.status);
+  n=await g.json();
+  if(!n||!n.M)throw new Error('Invalid live score data');
+  source='Live GitHub';
+ }catch(e){errors.push(e.message||'Live score fetch failed')}
+ // API fallback only if the raw content endpoint is unavailable.
  if(!n){
   try{
-   const g=await fetch('state.json?ts='+Date.now(),{cache:'no-store'});
-   if(!g.ok)throw new Error('Pages '+g.status);
-   const x=await g.json();
-   if(!x||!x.M)throw new Error('Invalid Pages score data');
-   n=x;source='Pages backup';
-  }catch(e){errors.push(e.message||'Pages fetch failed')}
+   const u='https://api.github.com/repos/'+repo()+'/contents/state.json?ref='+BR+'&ts='+Date.now();
+   const g=await fetch(u,{cache:'no-store'});
+   if(!g.ok)throw new Error('GitHub API '+g.status);
+   const j=await g.json();
+   const b64=(j.content||'').replace(/\\s/g,'');
+   const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
+   n=JSON.parse(new TextDecoder().decode(bytes));
+   if(!n||!n.M)throw new Error('Invalid score data');
+   source='GitHub API backup';
+  }catch(e){errors.push(e.message||'GitHub API fetch failed')}
  }
  if(!n)throw new Error(errors.join(' · ')||'No score data received');
  dg('● live · '+source+' · data '+new Date(n.ts).toLocaleTimeString()+(errors.length?' · '+errors.join(' / '):''));
