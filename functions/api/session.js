@@ -1,4 +1,4 @@
-import {json,currentUser,isAdmin} from "../_middleware.js";
+import {json,currentUser,isAdmin} from "../lib/auth.js";
 export async function onRequestGet({request,env}) {
   const u=await currentUser(request,env);
   if(!u) return json({authenticated:false});
