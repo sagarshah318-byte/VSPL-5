@@ -23,5 +23,5 @@ export async function onRequestGet({request,env}) {
   const session=crypto.randomUUID()+crypto.randomUUID(), hash=await sha256(session), expires=now+604800;
   await env.DB.prepare("INSERT INTO sessions(token_hash,github_id,created_at,expires_at) VALUES(?,?,?,?)").bind(hash,String(user.id),now,expires).run();
   const dest=admin?"/scorer.html?admin=1":"/scorer.html";
-  return redirect(new URL(dest,request.url).toString(),{"Set-Cookie":"vspl_session="+session+"; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800","Set-Cookie-2":"vspl_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"});
+  const response=redirect(new URL(dest,request.url).toString(),{"Set-Cookie":"vspl_session="+session+"; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"});response.headers.append("Set-Cookie","vspl_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");return response;
 }
