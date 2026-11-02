@@ -60,7 +60,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 const VIEWER=false,BR='main',DATA_REPO='sagarshah318-byte/VSPL-5-Live-Data';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ov=b=>Math.floor(b/6)+'.'+b%6;
-let H=[],M=null,T=[],U=[],tab='live',view=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
+let H=[],M=null,T=[],U=[],tab='live',view=null,playerView=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
 try{S=JSON.parse(document.getElementById('state').textContent||'{}')}catch(e){}
 T=S.T||[];S={};
 if(!VIEWER)try{const L=JSON.parse(localStorage.getItem('sb_all')||'null');if(L){H=L.H||[];M=L.M||null;T=L.T||[]}}catch(e){}
@@ -189,19 +189,21 @@ function ball(t,x){
  const B=bt(i,i.s),W=bw(i,i.b);let lab,legal=true;
  if(t=='run'){B.r+=x;B.b++;x==4&&B.f++;x==6&&B.s++;W.r+=x;W.b++;i.runs+=x;i.balls++;lab=''+x;x%2&&swap(i)}
  else if(t=='wd'){W.r++;i.runs++;i.ex++;lab='Wd';legal=false}
- else if(t=='nb'){W.r++;i.runs++;i.ex++;lab='Nb';legal=false}
+ else if(t=='nb'){W.r++;i.runs++;i.ex++;lab='Nb';legal=false;i.freeHit=true}
  else if(t=='bye'){B.b++;W.b++;i.runs++;i.ex++;i.balls++;lab='B1';swap(i)}
  
  M.last={n:(M.last?M.last.n:0)+1,ts:Date.now(),l:lab,t:i.s+(lab=='4'?' hits a boundary':lab=='6'?' hits a huge six':'')};
  endBall(i,legal,lab)}
 function endBall(i,legal,lab){
  i.over.push(lab);
+ if(legal)i.freeHit=false;
  if(legal&&i.balls%6==0){ if(i.s===null){i.s=i.n;i.n=null}else if(i.n===null){i.n=i.s;i.s=null}else swap(i); i.lastB=i.b;i.b=null;i.over=[]}
  chk();save();r();pop(M.last)}
 function openW(){const i=M.innings[M.cur];wk={t:'Bowled',f:'',who:i.s,r:0};r()}
 function out(){
  const i=M.innings[M.cur];if(!wk||M.done||!i.s||!i.n||!i.b)return;
  if(['Caught','Stumped'].includes(wk.t)&&!wk.f){alert('Select the fielder.');return}
+ if(i.freeHit&&wk.t!=='Run out'){alert('Free hit! Only a run out can dismiss the batter.');return}
  U.push(JSON.stringify(M));
  const ro=wk.t=='Run out',run=ro?wk.r:0,W=bw(i,i.b),b=i.b,f=wk.f;
  if(run){bt(i,i.s).r+=run;W.r+=run;i.runs+=run}
@@ -269,11 +271,11 @@ function live(){
  if(!M&&!CAN)return '<div class="c">No match is live right now. This page updates by itself when scoring starts.</div>';
  if(!M)return T.length<2?`<div class="c"><h2 style="margin-top:0">New match</h2><p>Save at least two teams with their players first. They stay saved until you clear them.</p><button class="b2 p" onclick="tab='teams';r()">Go to Teams</button></div>`:`<div class="c"><h2 style="margin-top:0">New match</h2><div class="r2"><div><label>Team A</label><select id="tA" onchange="teamOptions()">${T.map((t,k)=>`<option value="${k}">${esc(t.name)} (${t.g})</option>`).join('')}</select></div><div><label>Team B</label><select id="tB" onchange="teamOptions()">${T.map((t,k)=>`<option value="${k}"${k==1?' selected':''}>${esc(t.name)} (${t.g})</option>`).join('')}</select></div></div><div class="r2"><div><label>Overs</label><input id="ov" type="number" value="20" min="1"></div><div><label>Toss won by</label><select id="toss"><option value="0">Team A</option><option value="1">Team B</option></select></div></div><div class="r2"><div><label>Team A Captain</label><select id="capA"></select></div><div><label>Team B Captain</label><select id="capB"></select></div></div><label>Toss decision</label><select id="decision"><option value="bat">Winner chose to bat</option><option value="bowl">Winner chose to bowl</option></select><p class="mu">Category follows Team A. Select both captains and record the toss before starting.</p><p><button class="b2 p" onclick="start()">Start match</button></p></div>`;
  const i=M.innings[M.cur],BT=M.teams[i.bat],O=M.teams[i.bowl],tg=M.cur?M.innings[0].runs+1:null;
+ if(M.done)return `<div class="c"><h3 style="margin:0 0 4px">🏏 Match completed!</h3><p style="margin:0">Thank you for following the match. The next match will begin soon. Stay tuned for live updates.</p></div><div class="noprint">${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}${CAN?'<button class="b2 p" onclick="newM()">＋ Start New Match</button>':''}</div>`;
  let h=head(M);
- if(M.done)return h+card(M)+`<div class="c"><h3 style="margin:0 0 4px">🏏 Match completed!</h3><p style="margin:0">Thank you for following the match. The next match will begin soon. Stay tuned for live updates.</p></div><div class="noprint">${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}<button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2 p" onclick="newM()">＋ Start New Match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`
  const left=M.overs*6-i.balls;
  h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>
- <div class="mu">Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
+ <div class="mu">${i.freeHit?'<b style="color:var(--ac2)">FREE HIT</b> · ':''}Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
  const bats=BT.p.filter(p=>!(i.B[p]&&i.B[p].out)&&p!=i.s&&p!=i.n);
  const need=[];
  const nb=Object.keys(i.B).length>=2;
@@ -301,6 +303,26 @@ function matches(){
  return action+H.map(m=>{const a=m.innings[0],b=m.innings[1]||{runs:0,wkts:0};return `<div class="c" onclick="view=${m.id};r()" style="cursor:pointer"><div class="mu">${esc(m.date)} · ${m.gender} · ${m.overs} ov</div>
  <b>${esc(m.teams[a.bat].name)} ${a.runs}/${a.wkts}</b> vs <b>${esc(m.teams[a.bowl].name)} ${b.runs}/${b.wkts}</b><div class="res">${esc(m.result)}</div></div>`}).join('')}
 
+function playerMatches(name,gender){
+ const rows=[];
+ H.forEach(m=>{if(m.gender!==gender)return;m.innings.forEach((i,k)=>{
+  const team=m.teams[i.bat].p.includes(name)?m.teams[i.bat]:m.teams[i.bowl].p.includes(name)?m.teams[i.bowl]:null;
+  if(!team)return;const bat=i.B[name]||null,bowl=i.W[name]||null;
+  if(bat||bowl)rows.push({date:m.date,match:m.teams[0].name+' vs '+m.teams[1].name,team:team.name,innings:k+1,bat,bowl,result:m.result});
+ })});return rows;
+}
+function players(){
+ if(playerView){
+  const a=playerView.split('|'),gender=a[0],name=a.slice(1).join('|'),rows=playerMatches(name,gender);
+  let runs=0,balls=0,fours=0,sixes=0,outs=0,bb=0,conceded=0,wickets=0;
+  rows.forEach(x=>{if(x.bat){runs+=x.bat.r;balls+=x.bat.b;fours+=x.bat.f;sixes+=x.bat.s;if(x.bat.out)outs++}if(x.bowl){bb+=x.bowl.b;conceded+=x.bowl.r;wickets+=x.bowl.w}});
+  const matchRows=rows.map(x=>'<div class="c"><b>'+esc(x.match)+'</b><div class="mu">'+esc(x.date)+' · '+esc(x.team)+' · Innings '+x.innings+'</div>'+(x.bat?'<p><b>Batting:</b> '+x.bat.r+' runs off '+x.bat.b+' balls · 4s '+x.bat.f+' · 6s '+x.bat.s+' · '+(x.bat.out?esc(x.bat.out):'not out')+'</p>':'')+(x.bowl?'<p><b>Bowling:</b> '+ov(x.bowl.b)+' overs · '+x.bowl.r+' runs · '+x.bowl.w+' wickets · Econ '+(x.bowl.b?(x.bowl.r*6/x.bowl.b).toFixed(2):'—')+'</p>':'')+'<div class="mu">'+esc(x.result)+'</div></div>').join('');
+  return '<div class="noprint"><button class="b2" onclick="playerView=null;r()">← All players</button></div><div class="c sb"><h2>'+esc(name)+'</h2><div class="mu">'+gender+' · '+rows.length+' match innings</div></div><div class="c"><h3>Batting · Tournament total</h3><div class="r2"><div><b>'+runs+'</b><div class="mu">Runs</div></div><div><b>'+balls+'</b><div class="mu">Balls</div></div><div><b>'+(outs?(runs/outs).toFixed(2):'—')+'</b><div class="mu">Average</div></div><div><b>'+(balls?(runs*100/balls).toFixed(1):'—')+'</b><div class="mu">Strike rate</div></div><div><b>'+fours+'</b><div class="mu">4s</div></div><div><b>'+sixes+'</b><div class="mu">6s</div></div></div><h3>Bowling · Tournament total</h3><div class="r2"><div><b>'+ov(bb)+'</b><div class="mu">Overs</div></div><div><b>'+conceded+'</b><div class="mu">Runs conceded</div></div><div><b>'+wickets+'</b><div class="mu">Wickets</div></div><div><b>'+(bb?(conceded*6/bb).toFixed(2):'—')+'</b><div class="mu">Economy</div></div></div></div><h3>Match-wise performance</h3>'+(matchRows||'<div class="c">No individual scorecard entries found yet.</div>');
+ }
+ const seen={};H.forEach(m=>m.teams.forEach(t=>t.p.forEach(n=>{seen[m.gender+'|'+n]={n:n,g:m.gender}})));
+ const list=Object.values(seen).sort((a,b)=>a.g.localeCompare(b.g)||a.n.localeCompare(b.n));
+ return '<h2>Individual Player Profiles</h2><p class="mu">Select a player to view tournament totals and match-by-match batting and bowling figures.</p>'+(list.length?list.map(p=>'<div class="c" style="cursor:pointer" onclick="playerView=\''+esc(p.g+'|'+p.n).replace(/'/g,'&#39;')+'\';r()"><b>'+esc(p.n)+'</b><div class="mu">'+p.g+'</div></div>').join(''):'<div class="c">Player profiles will appear here after the first match is completed.</div>');
+}
 function agg(){const a={};
  H.forEach(m=>m.innings.forEach(i=>{
   for(const n in i.B){const k=m.gender+'|'+n,x=a[k]||(a[k]={n,g:m.gender,t:m.teams[i.bat].name,r:0,b:0,f:0,s:0,wb:0,wr:0,w:0});const y=i.B[n];x.r+=y.r;x.b+=y.b;x.f+=y.f;x.s+=y.s}
@@ -320,8 +342,8 @@ function leaders(){
 function r(){
  st();
  $n=document.getElementById('nav');
- $n.innerHTML=[['live','Live'],['matches','Matches'],['top','Best players']].concat(CAN?[['teams','Teams']]:[]).map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';view=null;try{sessionStorage.sb_t=tab}catch(e){}r();scrollTo(0,0)">${t[1]}</button>`).join('');
- document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='teams'&&CAN?teamsV():leaders();if(tab=='live'&&!M&&CAN&&document.getElementById('capA'))teamOptions();
+ $n.innerHTML=[['live','Live'],['matches','Matches'],['top','Best players'],['players','Players']].concat(CAN?[['teams','Teams']]:[]).map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';view=null;if(tab!=='players')playerView=null;try{sessionStorage.sb_t=tab}catch(e){}r();scrollTo(0,0)">${t[1]}</button>`).join('');
+ document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='players'?players():tab=='teams'&&CAN?teamsV():leaders();if(tab=='live'&&!M&&CAN&&document.getElementById('capA'))teamOptions();
 }
 (()=>{
  if(!CAN&&tab=='teams')tab='live';
