@@ -92,6 +92,7 @@ async function push(){
  busy=false;st();if(dirty){dirty=false;push()}}
 function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
 function dg(t){const e=document.getElementById('st');if(e&&VIEWER)e.innerHTML='<small>'+esc(t)+'</small>'}
+function refreshViewer(){dg('Refreshing score…');poll().catch(e=>dg('Refresh failed · '+(e.message||e)));}
 async function poll(){
  let n=null,source='';
  const errors=[];
@@ -242,7 +243,7 @@ function live(){
  let h=head(M);
  if(M.done)return h+card(M)+`<div class="noprint"><button class="b2 p" onclick="shareScore()">Share score</button><button class="b2 p" onclick="shareScore(${m.id})">Share</button><button class="b2 p" onclick="window.print()">Save as PDF</button>${CAN?'<button class="b2" onclick="newM()">New match</button><button class="b2" onclick="undo()">Undo last ball</button>':''}</div>`;
  const left=M.overs*6-i.balls;
- h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>
+ h+=`<div class="c sb"><div class="mu">${esc(BT.name)} batting · Innings ${M.cur+1}</div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="big num">${i.runs}/${i.wkts} <span class="mu" style="font-size:16px">(${ov(i.balls)}/${M.overs})</span></div>${VIEWER?'<button class="b2 p" onclick="refreshViewer()">↻ Refresh</button>':''}</div>
  <div class="mu">Run rate ${i.balls?(i.runs*6/i.balls).toFixed(2):'0.00'}${tg?` · Target ${tg} · Need ${Math.max(0,tg-i.runs)} off ${left} balls`:''}</div></div>`;
  const bats=BT.p.filter(p=>!(i.B[p]&&i.B[p].out)&&p!=i.s&&p!=i.n);
  const need=[];
