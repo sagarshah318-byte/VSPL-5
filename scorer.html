@@ -227,7 +227,25 @@ function endNow(){if(!confirm('End match now and save it?'))return;
 function newM(){if(M&&!M.done){alert('Finish or save the current match before starting another.');return}M=null;U=[];wk=null;view=null;tab='live';save();r();scrollTo(0,0)}
 function del(id){if(!confirm('Delete this match record?'))return;H=H.filter(h=>h.id!=id);view=null;save();r()}
 
-function card(m){return m.innings.map((i,k)=>{
+function matchAwards(m){
+ const bat=[],bowl=[];
+ m.innings.forEach(i=>{
+  for(const n in i.B){const x=i.B[n];if(x.b)bat.push({n,t:m.teams[i.bat].name,r:x.r,b:x.b,f:x.f,s:x.s})}
+  for(const n in i.W){const x=i.W[n];if(x.b)bowl.push({n,t:m.teams[i.bowl].name,w:x.w,r:x.r,b:x.b,e:x.r*6/x.b})}
+ });
+ const maxRuns=bat.length?Math.max(...bat.map(x=>x.r)):-1;
+ const topBat=bat.filter(x=>x.r===maxRuns);
+ const maxW=bowl.length?Math.max(...bowl.map(x=>x.w)):-1;
+ const topW=maxW<0?[]:bowl.filter(x=>x.w===maxW);
+ const bestE=topW.length?Math.min(...topW.map(x=>x.e)):Infinity;
+ const topBowl=topW.filter(x=>Math.abs(x.e-bestE)<0.000001);
+ const names=a=>a.map(x=>esc(x.n)+' <small>'+esc(x.t)+'</small>').join(', ');
+ return '<div class="c"><h2 style="margin:0 0 8px">🏆 Individual Match Awards</h2>'+
+  (topBat.length?'<div class="best">Best Batter'+(topBat.length>1?'s':'')+'<br><b>'+names(topBat)+'</b><br>'+maxRuns+' runs'+(topBat.length===1?' · '+topBat[0].b+' balls · SR '+(topBat[0].r*100/topBat[0].b).toFixed(0):' · tied')+'</div>':'<div class="mu">Best Batter: No batting data available.</div>')+
+  (topBowl.length?'<div class="best">Best Bowler'+(topBowl.length>1?'s':'')+'<br><b>'+names(topBowl)+'</b><br>'+maxW+' wickets · '+bestE.toFixed(1)+' economy'+(topBowl.length>1?' · tied':'')+'</div>':'<div class="mu">Best Bowler: No bowling data available.</div>')+
+  '<p class="mu">Best batter is decided by highest runs. Best bowler is decided by most wickets, with lower economy as the tie-breaker.</p></div>';
+}
+function card(m){return (m.done?matchAwards(m):'')+m.innings.map((i,k)=>{
  const T=m.teams[i.bat],O=m.teams[i.bowl],fin=m.done||k<m.cur;
  const rows=Object.keys(i.B).map(n=>{const x=i.B[n];return `<tr><td>${esc(n)}<small>${x.out?esc(x.out):fin?'not out':(n==i.s||n==i.n)?'batting':'not out'}</small></td><td><b>${x.r}</b></td><td>${x.b}</td><td>${x.f}</td><td>${x.s}</td><td>${x.b?(x.r*100/x.b).toFixed(0):'-'}</td></tr>`}).join('');
  const dnb=T.p.filter(p=>!i.B[p]);
