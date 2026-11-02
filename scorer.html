@@ -60,7 +60,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 const VIEWER=false,BR='main',DATA_REPO='sagarshah318-byte/VSPL-5-Live-Data';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ov=b=>Math.floor(b/6)+'.'+b%6;
-let H=[],M=null,T=[],U=[],tab='live',view=null,playerView=null,wk=null,CAN=!VIEWER,pt,popT,et=null,S={},pf=false;
+let H=[],M=null,T=[],U=[],tab='live',view=null,playerView=null,wk=null,CAN=false,pt,popT,et=null,S={},pf=false;
 try{S=JSON.parse(document.getElementById('state').textContent||'{}')}catch(e){}
 T=S.T||[];S={};
 if(!VIEWER)try{const L=JSON.parse(localStorage.getItem('sb_all')||'null');if(L){H=L.H||[];M=L.M||null;T=L.T||[]}}catch(e){}
@@ -73,27 +73,8 @@ function repo(){
  if(!r){r=(prompt('GitHub repository, like username/repo:')||'').trim();try{localStorage.setItem('sb_repo',r)}catch(e){}}
  return r}
 let SY='',TOK='',SHA=null,busy=false,dirty=false;
-function tok(){try{TOK=TOK||localStorage.getItem('sb_tok')||''}catch(e){}
- if(!TOK){TOK=(prompt('Paste your GitHub token (kept only on this phone):')||'').trim();try{localStorage.setItem('sb_tok',TOK)}catch(e){}}return TOK}
-const b64=s=>btoa(unescape(encodeURIComponent(s)));
-async function push(){
- if(VIEWER)return;if(busy){dirty=true;return}
- if(!tok()){SY='no token';st();return}
- busy=true;SY='sending…';st();
- const u='https://api.github.com/repos/'+DATA_REPO+'/contents/state.json',h={Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'};
- try{const body=JSON.stringify({H,M,T,ts:Date.now()});
-  for(let k=0;k<3;k++){
-   if(!SHA){const g=await fetch(u+'?ref='+BR+'&t='+Date.now(),{headers:h,cache:'no-store'});
-    if(g.ok)SHA=(await g.json()).sha;else if(g.status!=404)throw new Error('GitHub '+g.status+(g.status==401?' (token wrong)':' (check repo and token)'))}
-   const p=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify(Object.assign({message:'score',content:b64(body),branch:BR},SHA?{sha:SHA}:{}))});
-   if(p.ok){SHA=(await p.json()).content.sha;SY='live · sent '+new Date().toLocaleTimeString();break}
-   if(p.status==409||p.status==422){SHA=null;continue}
-   throw new Error('GitHub '+p.status+(p.status==401?' (token wrong)':p.status==404?' (repo or token access)':''))}
- }catch(e){SY='send failed: '+(e.message||e)}
- busy=false;st();if(dirty){dirty=false;push()}}
-function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
-function updateToken(){const t=prompt('Paste your new GitHub token. It will be saved only on this phone. Do not share it in chat.');if(t&&t.trim()){TOK=t.trim();try{localStorage.setItem('sb_tok',TOK)}catch(e){}SHA=null;SY='token updated · make a score update to test';st()}}
-document.getElementById('tokenBtn').addEventListener('click',updateToken);
+async function push(){if(VIEWER||!CAN)return;if(busy){dirty=true;return}busy=true;SY='sending…';st();try{const p=await fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({H,M,T,ts:Date.now()})});if(!p.ok){const e=await p.json().catch(()=>({}));throw new Error(e.error||'Save failed ('+p.status+')')}SY='live · sent '+new Date().toLocaleTimeString()}catch(e){SY='send failed: '+(e.message||e)}busy=false;st();if(dirty){dirty=false;push()}}function st(){const e=document.getElementById('st');if(e&&!VIEWER)e.textContent='● scorer · '+(SY||'ready')}
+function updateToken(){alert('Scoring access is managed through your approved GitHub sign-in.')}document.getElementById('tokenBtn').textContent='Access';document.getElementById('tokenBtn').addEventListener('click',()=>location.href='/admin-access.html');
 document.getElementById('resetBtn').addEventListener('click',resetTournament);
 let resetBusy=false;
 async function resetTournament(){
@@ -345,8 +326,15 @@ function r(){
  $n.innerHTML=[['live','Live'],['matches','Matches'],['top','Best players'],['players','Players']].concat(CAN?[['teams','Teams']]:[]).map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';view=null;if(tab!=='players')playerView=null;try{sessionStorage.sb_t=tab}catch(e){}r();scrollTo(0,0)">${t[1]}</button>`).join('');
  document.getElementById('app').innerHTML=tab=='live'?live():tab=='matches'?matches():tab=='players'?players():tab=='teams'&&CAN?teamsV():leaders();if(tab=='live'&&!M&&CAN&&document.getElementById('capA'))teamOptions();
 }
-(()=>{
- if(!CAN&&tab=='teams')tab='live';
- r();try{setTimeout(()=>scrollTo(0,+(sessionStorage.sb_y||0)),0);addEventListener('scroll',()=>{sessionStorage.sb_y=scrollY})}catch(e){}
- if(VIEWER){poll();setInterval(poll,5000)}else st()})();
+(async()=>{
+if(VIEWER){r();poll();setInterval(poll,5000);return}
+const gate=document.createElement('div');gate.id='accessGate';gate.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px';
+gate.innerHTML='<div class="c" style="max-width:460px;width:100%;text-align:center"><h2>🏏 VSPL-5 Scorer Access</h2><p id="gateMsg">Checking access…</p><p id="gateActions"></p></div>';document.body.appendChild(gate);
+try{const s=await fetch('/api/session',{cache:'no-store',credentials:'same-origin'}).then(x=>x.json());
+if(!s.authenticated){document.getElementById('gateMsg').textContent='Sign in with GitHub to request scoring access. Your verified email will be shown to the administrator.';document.getElementById('gateActions').innerHTML='<a class="b2 p" href="/api/auth/github">Sign in with GitHub</a>';return}
+if(!s.can_score){document.getElementById('gateMsg').textContent=s.status==='rejected'?'Your request was not approved. Contact the tournament administrator.':'Your request is awaiting approval from the tournament administrator.';document.getElementById('gateActions').innerHTML='<button class="b2" onclick="location.reload()">Refresh approval status</button>';return}
+CAN=true;const live=await fetch('/api/state',{cache:'no-store'});if(!live.ok)throw new Error('Could not load current live score data.');const data=await live.json();H=data.H||[];M=data.M||null;T=data.T||T;try{localStorage.setItem('sb_all',JSON.stringify({H,M,T,ts:data.ts||Date.now()}))}catch(e){}
+gate.remove();r();try{setTimeout(()=>scrollTo(0,+(sessionStorage.sb_y||0)),0);addEventListener('scroll',()=>{sessionStorage.sb_y=scrollY})}catch(e){}st();
+}catch(e){document.getElementById('gateMsg').textContent='Access check failed: '+e.message;document.getElementById('gateActions').innerHTML='<button class="b2" onclick="location.reload()">Try again</button>'}
+})();
 </script></body></html>
