@@ -1,4 +1,4 @@
-import {json,currentUser,isAdmin} from "../../_middleware.js";
+import {json,currentUser,isAdmin} from "../../lib/auth.js";
 export async function onRequestPost({request,env}) {
  const u=await currentUser(request,env); if(!await isAdmin(u,env)) return json({error:"Forbidden"},403);
  const body=await request.json().catch(()=>null); if(!body || !body.id || !["approve","reject","revoke"].includes(body.action)) return json({error:"Invalid request"},400);
