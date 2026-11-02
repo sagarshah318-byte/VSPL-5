@@ -1,4 +1,4 @@
-import {json,cookie,sha256} from "../_middleware.js";
+import {json,cookie,sha256} from "../lib/auth.js";
 export async function onRequestPost({request,env}) {
  const raw=cookie(request,"vspl_session");
  if(raw) await env.DB.prepare("UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL").bind(Math.floor(Date.now()/1000),await sha256(raw)).run();
