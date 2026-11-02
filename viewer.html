@@ -101,7 +101,7 @@ async function poll(){
   const g=await fetch(u,{cache:'no-store'});
   if(!g.ok)throw new Error('Live score '+g.status);
   n=await g.json();
-  if(!n||!n.M)throw new Error('Invalid live score data');
+  if(!n||!Array.isArray(n.H)||!Object.prototype.hasOwnProperty.call(n,'M'))throw new Error('Invalid live score data');
   source='Live GitHub';
  }catch(e){errors.push(e.message||'Live score fetch failed')}
  // A successful raw response can still be an old CDN copy. When its data is
@@ -118,7 +118,7 @@ async function poll(){
    const b64=(j.content||'').replace(/\s/g,'');
    const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
    const fresh=JSON.parse(new TextDecoder().decode(bytes));
-   if(!fresh||!fresh.M)throw new Error('Invalid API score data');
+   if(!fresh||!Array.isArray(fresh.H)||!Object.prototype.hasOwnProperty.call(fresh,'M'))throw new Error('Invalid API score data');
    if(!n||Number(fresh.ts)>Number(n.ts||0)){n=fresh;source='GitHub API verified'}
   }catch(e){errors.push(e.message||'GitHub API verification failed')}
  }
